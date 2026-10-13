@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Idiom Town</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box}body{margin:0;overflow:hidden;font-family:Segoe UI,Arial,sans-serif;background:#8fd3ff}
+.ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,20,40,.72);z-index:5}
+.card{background:#fff;border:6px solid #ffd400;border-radius:14px;padding:20px 24px;max-width:620px;width:92%;max-height:90vh;overflow:auto;box-shadow:0 8px 0 #c9a600}
+h1{margin:0 0 6px;color:#d62828}h2{margin:0 0 8px}input,textarea{width:100%;padding:10px;font-size:16px;border:2px solid #ccc;border-radius:8px;margin:4px 0}
+button{background:#2a9d4a;color:#fff;border:0;border-bottom:4px solid #1b6e32;padding:10px 16px;font-size:16px;border-radius:8px;cursor:pointer;margin:4px 4px 4px 0}
+button.g{background:#888;border-color:#555}button.o{background:#f77f00;border-color:#b45a00}
+.opt{display:block;width:100%;text-align:left;background:#eef6ff;color:#123;border:2px solid #7ab;border-bottom-width:4px}
+.opt.ok{background:#c8f7c5}.opt.no{background:#ffd0d0}
+#hud{position:fixed;top:8px;left:8px;right:8px;display:flex;gap:8px;flex-wrap:wrap;z-index:2;pointer-events:none}
+#hud div{background:rgba(0,0,0,.65);color:#fff;padding:6px 12px;border-radius:8px;font-weight:600}
+#prompt{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#ffd400;padding:10px 20px;border-radius:10px;font-weight:700;display:none;z-index:2}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#2a9d4a;color:#fff;padding:12px 22px;border-radius:10px;font-weight:700;display:none;z-index:6}
+.bub{background:#fff7d6;border-left:6px solid #f77f00;padding:10px;border-radius:6px;margin:8px 0;font-size:17px}
+.lv{background:#d62828;color:#fff;border-radius:6px;padding:2px 8px;font-size:13px}
+table{width:100%;border-collapse:collapse}td,th{padding:5px;border-bottom:1px solid #ddd;text-align:left}small{color:#555}
+#help{position:fixed;bottom:6px;right:8px;color:#fff;font-size:12px;z-index:2;text-shadow:0 1px 2px #000}
+</style></head><body>
+<div id="hud"></div><div id="prompt"></div><div id="toast"></div>
+<div id="help">WASD / Arrows = walk · Q / R or drag mouse = turn camera · E / Space = talk</div>
+<div class="ov" id="reg"><div class="card">
+<h1 id="ttl"></h1><p id="sub"></p>
+<input id="nm" placeholder="Full name"><input id="cl" placeholder="Class / No. (e.g. M.6/2 No.14)">
+<button onclick="start()">▶ Start playing</button><button class="o" onclick="board()">🏆 Leaderboard</button><button class="g" onclick="teacher()">Teacher</button>
+</div></div>
+<div class="ov" id="dlg" style="display:none"><div class="card" id="dbody"></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ============ TEACHER SETTINGS — edit freely ============ */
+const CONFIG={
+ title:"🧱 Idiom Town", school:"M.6 English · Practice Step",
+ subtitle:"Walk around town, talk to each person, choose the best expression, then write (or say!) your own reply. Finish all 6 to become a Town Leader.",
+ teacherPin:"1234",            // PIN for Teacher panel (export / reset)
+ pointsMCQ:[10,5,2],           // points for 1st / 2nd / 3rd+ attempt on multiple choice
+ pointsWrite:20,               // points for an accepted writing task
+ sheetUrl:"",                  // optional: Google Apps Script web-app URL to collect scores online
+ skyColor:0x8fd3ff, walkSpeed:9,
+ /* Each NPC: unlocks in order. need = regex list; min = how many must appear in the writing. */
+ npcs:[
+ {name:"Mia",role:"Café Barista",level:"A1",rank:"Newcomer",place:"Brick Café",color:0xd62828,x:-14,z:-8,
+  say:"Hi there! Welcome to Brick Café. What can I get for you today?",
+  opts:[["Could I have a latte, please?",1,"Polite and natural for ordering."],["Give me coffee now.",0,"Too direct – sounds rude."],["I am wanting a latte.",0,"We don't use 'be wanting' – say 'I'd like…'."]],
+  task:"Order a drink and a snack politely, then ask how much it is.",hint:"Could I have… / I'd like… / How much is that?",
+  need:["could i|can i|i'd like|i would like","how much"],min:2,minWords:10},
+ {name:"Tom",role:"New Neighbour",level:"A2",rank:"Resident",place:"Blue House",color:0x1d6fd6,x:14,z:-10,
+  say:"Oh hi! Sorry I'm ten minutes late – the bus was slow!",
+  opts:[["It's okay, no worries!",1,"'No worries' = it's not a problem. Friendly and informal."],["You must be sorry.",0,"Unnatural and a bit unkind."],["I don't worry.",0,"Different meaning – it's about your feelings, not a response."]],
+  task:"Tom is moving in. Welcome him, offer to help with a box, and tell him to make himself at home.",hint:"Make yourself at home · Can I give you a hand?",
+  need:["make yourself at home","hand|help"],min:2,minWords:12},
+ {name:"Priya",role:"Classmate",level:"B1",rank:"Neighbour",place:"Brick School",color:0x8e44ad,x:-14,z:16,
+  say:"I'm so nervous about the English exam tomorrow… I feel like I'll fail!",
+  opts:[["Hang in there! You'll do great.",1,"'Hang in there' = keep trying, don't give up. Supportive."],["That's a piece of cake for you. Who cares?",0,"Dismissive – she's nervous, not bored."],["Break a leg and don't talk to me.",0,"'Break a leg' is for performances, and the second part is rude."]],
+  task:"Encourage Priya in 2–3 sentences. Use at least ONE idiom (e.g. hang in there / piece of cake / you've got this).",hint:"Hang in there · It'll be a piece of cake · You've got this",
+  need:["hang in there","piece of cake","you've got this|you got this","keep your chin up|fingers crossed"],min:1,minWords:15},
+ {name:"Mr. Lee",role:"Interviewer",level:"B1+",rank:"Professional",place:"Page & Co. Bookshop",color:0x2c3e50,x:14,z:16,
+  say:"Thanks for coming. So, why should we hire you for this job?",
+  opts:[["I'm a quick learner and I always go the extra mile.",1,"Professional idioms that show attitude."],["I need money, so hire me.",0,"Honest but unprofessional."],["Because it is easy as pie to me, bro.",0,"Too casual/slangy for an interview."]],
+  task:"Answer 'Why should we hire you?' professionally in 3–4 sentences. Use at least TWO of: go the extra mile · hit the ground running · a quick learner · team player.",hint:"I'm ready to hit the ground running. / I'm a team player…",
+  need:["go the extra mile","hit the ground running","quick learner","team player"],min:2,minWords:25},
+ {name:"Dr. Chen",role:"Project Manager",level:"B2",rank:"Team Leader",place:"Chen Tech Office",color:0x16a085,x:-6,z:-27,
+  say:"The client rejected our prototype. We have to rethink everything. Ideas?",
+  opts:[["Let's go back to the drawing board and think outside the box.",1,"Start again with new, creative ideas."],["Let's beat around the bush for a while.",0,"'Beat around the bush' = avoid the main point."],["It's raining cats and dogs, so let's wait.",0,"Irrelevant – it describes heavy rain."]],
+  task:"Pitch a plan to your team (4–5 sentences). Use at least TWO: back to the drawing board · think outside the box · on the same page · get the ball rolling.",hint:"We need to get the ball rolling. · Let's make sure we're all on the same page.",
+  need:["drawing board","outside the box","same page","ball rolling"],min:2,minWords:35},
+ {name:"Mayor Rivera",role:"Town Mayor",level:"B2+",rank:"Town Leader",place:"Brick City Hall",color:0xc0392b,x:8,z:29,
+  say:"Our river park is closing for repairs. Residents are upset. As a young leader, what's your message?",
+  opts:[["It's a blessing in disguise – we can build something even better.",1,"Something bad turns out to have a good side. Strong, diplomatic tone."],["Let's cut corners and finish it by Friday.",0,"'Cut corners' = do it badly to save time/money – a poor message."],["It's not my cup of tea, so I'll stay quiet.",0,"Misused: 'not my cup of tea' means 'not my preference'."]],
+  task:"Give a short public speech (5–6 sentences). Use at least TWO: a blessing in disguise · bite the bullet · the ball is in our court · cut corners · on the same page.",hint:"We must bite the bullet. · The ball is in our court now.",
+  need:["blessing in disguise","bite the bullet","ball is in (our|your|their) court","cut(ting)? corners","same page"],min:2,minWords:45}
+ ]};
+/* ============ ENGINE ============ */
+const $=id=>document.getElementById(id),N=CONFIG.npcs;
+let me=null,prog=0,score=0,log=[],ready=false,modal=true,att=0,cur=-1;
+$('ttl').textContent=CONFIG.title;$('sub').innerHTML='<b>'+CONFIG.school+'</b><br>'+CONFIG.subtitle;
+const DB={get:()=>JSON.parse(localStorage.getItem('idiomTownBoard')||'[]'),set:v=>localStorage.setItem('idiomTownBoard',JSON.stringify(v))};
+function save(){if(!me)return;let b=DB.get().filter(r=>r.id!==me.id);b.push({id:me.id,name:me.name,cls:me.cls,score,stage:prog,rank:prog?N[prog-1].rank:'—',log,t:Date.now()});DB.set(b);
+ if(CONFIG.sheetUrl)fetch(CONFIG.sheetUrl,{method:'POST',mode:'no-cors',body:JSON.stringify({name:me.name,cls:me.cls,score,stage:prog,log})}).catch(()=>{})}
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2800)}
+function hud(){$('hud').innerHTML=`<div>👤 ${me.name}</div><div>⭐ ${score}</div><div>🏅 ${prog?N[prog-1].rank:'Visitor'}</div><div>🎯 ${prog<N.length?'Find '+N[prog].name+' at '+N[prog].place+' ('+N[prog].level+')':'All done! 🎉'}</div>`}
+function start(){const n=$('nm').value.trim(),c=$('cl').value.trim();if(!n)return alert('Please enter your name');
+ me={id:(n+'|'+c).toLowerCase(),name:n,cls:c};const old=DB.get().find(r=>r.id===me.id);if(old){prog=old.stage;score=old.score;log=old.log||[]}
+ $('reg').style.display='none';modal=false;ready=true;hud();refreshMarks();if(!window.sceneStarted){init();}}
+function board(back){const b=DB.get().sort((a,b)=>b.score-a.score||a.t-b.t).slice(0,15);
+ show(`<h2>🏆 Leaderboard</h2><table><tr><th>#</th><th>Name</th><th>Class</th><th>Rank</th><th>Score</th></tr>${b.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.cls)}</td><td>${r.rank}</td><td><b>${r.score}</b></td></tr>`).join('')||'<tr><td colspan=5>No players yet</td></tr>'}</table><small>Saved on this computer/browser. Set CONFIG.sheetUrl to collect online.</small><br><button onclick="closeD()">Close</button>`)}
+function teacher(){if(prompt('Teacher PIN')!==CONFIG.teacherPin)return;
+ show(`<h2>Teacher panel</h2><button onclick="csv()">⬇ Export CSV (with written answers)</button><button class="o" onclick="if(confirm('Delete ALL scores?')){DB.set([]);closeD()}">Reset leaderboard</button><button class="g" onclick="closeD()">Close</button>`)}
+function csv(){let r=[['Name','Class','Score','Stage','NPC','Level','Attempts(MCQ)','Answer']];DB.get().forEach(p=>(p.log.length?p.log:[{}]).forEach(l=>r.push([p.name,p.cls,p.score,p.stage,l.npc||'',l.level||'',l.att||'',l.text||''])));
+ const s=r.map(x=>x.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+s],{type:'text/csv'}));a.download='idiom-town-scores.csv';a.click()}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function show(h){$('dbody').innerHTML=h;$('dlg').style.display='flex';modal=true}
+function closeD(){$('dlg').style.display='none';modal=!ready}
+/* ---- dialogue ---- */
+function talk(i){cur=i;att=0;modal=true;const n=N[i];
+ show(`<span class="lv">${n.level}</span> <b>${n.name}</b> · ${n.role}<div class="bub">💬 ${n.say}</div><b>Step 1 – Choose the best reply:</b><div id="ops"></div><div id="fb"></div><button class="g" onclick="closeD()">Leave</button>`);
+ const ord=n.opts.map((o,k)=>k).sort(()=>Math.random()-.5);
+ $('ops').innerHTML=ord.map(k=>`<button class="opt" onclick="pick(${k},this)">${esc(n.opts[k][0])}</button>`).join('')}
+function pick(k,b){const n=N[cur],o=n.opts[k];if(o[1]){b.classList.add('ok');const p=CONFIG.pointsMCQ[Math.min(att,CONFIG.pointsMCQ.length-1)];score+=p;hud();$('fb').innerHTML=`<div class="bub" style="border-color:#2a9d4a">✅ ${o[2]} <b>+${p}</b></div><button onclick="writeStep()">Next: writing task ➜</button>`;document.querySelectorAll('.opt').forEach(x=>x.disabled=true)}
+ else{att++;b.classList.add('no');b.disabled=true;$('fb').innerHTML=`<div class="bub" style="border-color:#d62828">❌ ${o[2]} Try again!</div>`}}
+function writeStep(){const n=N[cur];show(`<span class="lv">${n.level}</span> <b>Step 2 – Your turn, ${n.name} is waiting</b><div class="bub">✍️ ${n.task}</div><small>💡 ${n.hint}</small><textarea id="ta" rows="5" placeholder="Type here or press 🎤 and speak…"></textarea><div id="fb"></div><button onclick="submitW()">Send ✔</button><button class="o" onclick="mic()">🎤 Speak</button>`)}
+function mic(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R)return alert('Speech input works in Chrome.');const r=new R();r.lang='en-US';r.onresult=e=>{$('ta').value+=($('ta').value?' ':'')+e.results[0][0].transcript};r.start();toast('🎤 Listening…')}
+function submitW(){const n=N[cur],t=$('ta').value.trim(),w=t.split(/\s+/).filter(Boolean).length;
+ const hits=n.need.filter(r=>new RegExp(r,'i').test(t)).length;
+ if(w<n.minWords)return $('fb').innerHTML=`<div class="bub" style="border-color:#d62828">Write a little more (${w}/${n.minWords} words).</div>`;
+ if(hits<n.min)return $('fb').innerHTML=`<div class="bub" style="border-color:#d62828">Good start! Use at least <b>${n.min}</b> target expression(s) (found ${hits}). Check the hint 💡</div>`;
+ score+=CONFIG.pointsWrite;log=log.filter(l=>l.npc!==n.name);log.push({npc:n.name,level:n.level,att:att+1,text:t});
+ if(cur===prog)prog++;save();hud();refreshMarks();
+ const fin=prog>=N.length;
+ show(`<h2>🎉 ${fin?'You did it!':'Great job!'}</h2><div class="bub">${n.name}: "${fin?'You spoke like a true leader!':'That sounds natural! Thanks!'}"</div><p>+${CONFIG.pointsWrite} points · New rank: <b>${n.rank}</b></p><p>Total score: <b>${score}</b></p>${fin?'<button onclick="board()">🏆 See leaderboard</button>':'<button onclick="closeD()">Continue exploring ➜</button>'}`)}
+/* ---- 3D ---- */
+let scene,cam,ren,player,keys={},yaw=0,marks=[],npcMesh=[],blocks=[],clock=new THREE.Clock(),near=-1;
+const M=c=>new THREE.MeshLambertMaterial({color:c});
+function B(w,h,d,c,x,y,z,p){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c));m.position.set(x,y,z);m.castShadow=true;(p||scene).add(m);return m}
+function C(r,h,c,x,y,z,p){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,16),M(c));m.position.set(x,y,z);(p||scene).add(m);return m}
+function fig(col,hair,cape){const g=new THREE.Group();
+ g.legL=B(.32,.55,.34,0x223355,-.19,.28,0,g);g.legR=B(.32,.55,.34,0x223355,.19,.28,0,g);
+ B(.8,.7,.45,col,0,.9,0,g);g.armL=B(.2,.6,.24,col,-.52,.9,0,g);g.armR=B(.2,.6,.24,col,.52,.9,0,g);
+ B(.22,.2,.22,0xffd400,-.52,.5,0,g);B(.22,.2,.22,0xffd400,.52,.5,0,g);
+ C(.32,.36,0xffd400,0,1.42,0,g);C(.12,.1,0xffd400,0,1.65,0,g);
+ B(.07,.07,.05,0,-.12,1.45,.31,g);B(.07,.07,.05,0,.12,1.45,.31,g);B(.2,.04,.05,0x552200,0,1.33,.31,g);
+ C(.34,.16,hair,0,1.62,-.03,g);if(cape)B(.8,1,.05,cape,0,.95,-.28,g);
+ g.scale.setScalar(1.5);return g}
+function label(t,sub,col){const c=document.createElement('canvas');c.width=320;c.height=110;const x=c.getContext('2d');x.fillStyle='rgba(0,0,0,.7)';x.fillRect(0,0,320,110);x.fillStyle='#fff';x.font='bold 36px Arial';x.textAlign='center';x.fillText(t,160,45);x.fillStyle=col||'#ffd400';x.font='28px Arial';x.fillText(sub,160,88);
+ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c)}));s.scale.set(4,1.4,1);return s}
+function house(x,z,w,d,h,col,roof,name){B(w,h,d,col,x,h/2,z);B(w+.6,.6,d+.6,roof,x,h+.3,z);
+ for(let i=-1;i<=1;i+=2)for(let j=0;j<2;j++)B(1.3,1.3,.1,0x9fe0ff,x+i*w/4,2+j*2.2,z+(z<0?d/2:-d/2)+(z<0?.05:-.05));
+ const s=label(name,'');s.position.set(x,h+2.2,z);scene.add(s);blocks.push({x,z,w:w+1.5,d:d+1.5})}
+function init(){window.sceneStarted=true;
+ scene=new THREE.Scene();scene.background=new THREE.Color(CONFIG.skyColor);scene.fog=new THREE.Fog(CONFIG.skyColor,60,140);
+ cam=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,300);
+ ren=new THREE.WebGLRenderer({antialias:true});ren.setSize(innerWidth,innerHeight);ren.shadowMap.enabled=true;document.body.prepend(ren.domElement);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x88aa66,.8));const sun=new THREE.DirectionalLight(0xffffff,.7);sun.position.set(30,50,20);sun.castShadow=true;sun.shadow.camera.left=sun.shadow.camera.bottom=-60;sun.shadow.camera.right=sun.shadow.camera.top=60;scene.add(sun);
+ const tc=document.createElement('canvas');tc.width=tc.height=64;const x=tc.getContext('2d');x.fillStyle='#3fae49';x.fillRect(0,0,64,64);x.fillStyle='#4cc457';x.beginPath();x.arc(32,32,18,0,7);x.fill();
+ const t=new THREE.CanvasTexture(tc);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(45,45);
+ const g=new THREE.Mesh(new THREE.PlaneGeometry(180,180),new THREE.MeshLambertMaterial({map:t}));g.rotation.x=-Math.PI/2;g.receiveShadow=true;scene.add(g);
+ const r1=new THREE.Mesh(new THREE.PlaneGeometry(100,6),M(0x555555));r1.rotation.x=-Math.PI/2;r1.position.set(0,.02,3);scene.add(r1);
+ const r2=new THREE.Mesh(new THREE.PlaneGeometry(6,100),M(0x555555));r2.rotation.x=-Math.PI/2;r2.position.set(0,.03,0);scene.add(r2);
+ house(-22,-14,9,8,5,0xe74c3c,0x992222,'Brick Café');house(22,-14,9,8,5,0x3498db,0x1b5e8c,'Blue House');
+ house(-22,20,10,8,6,0xf1c40f,0xb38f00,'Brick School');house(22,20,10,8,5,0x8d6e63,0x5d4037,'Page & Co.');
+ house(-6,-36,12,8,7,0x1abc9c,0x0e7a66,'Chen Tech');house(8,38,12,8,7,0xecf0f1,0xc0392b,'City Hall');
+ for(let i=0;i<26;i++){const px=(Math.random()-.5)*88,pz=(Math.random()-.5)*88;if(Math.abs(px)<5||Math.abs(pz-3)<5||blocks.some(b=>Math.abs(px-b.x)<b.w&&Math.abs(pz-b.z)<b.d))continue;
+  B(.6,2,.6,0x6d4c41,px,1,pz);B(2.6,1,2.6,0x2e8b3d,px,2.5,pz);B(1.8,1,1.8,0x34a047,px,3.4,pz)}
+ player=fig(0x2f6f9f,0x3a2a1a,0xd62828);player.position.set(0,0,6);scene.add(player);
+ N.forEach((n,i)=>{const f=fig(n.color,[0x222,0x6b3e1a,0xeeee99,0x111,0x884400,0x999999][i]);f.position.set(n.x,0,n.z);f.lookAt(0,0,3);scene.add(f);
+  const s=label(n.name,n.level+' · '+n.role);s.position.set(n.x,4.4,n.z);scene.add(s);
+  const a=new THREE.Mesh(new THREE.ConeGeometry(.5,1,4),M(0xffd400));a.rotation.x=Math.PI;a.position.set(n.x,5.6,n.z);scene.add(a);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(1.8,2.2,32),new THREE.MeshBasicMaterial({color:0xffd400,side:2}));ring.rotation.x=-Math.PI/2;ring.position.set(n.x,.06,n.z);scene.add(ring);
+  marks.push({a,ring});npcMesh.push(f)});
+ refreshMarks();
+ addEventListener('keydown',e=>{keys[e.code]=1;if(!modal&&(e.code==='KeyE'||e.code==='Space')&&near>=0)tryTalk(near)});
+ addEventListener('keyup',e=>keys[e.code]=0);
+ let dn=0,lx=0;ren.domElement.onmousedown=e=>{dn=1;lx=e.clientX};addEventListener('mouseup',()=>dn=0);addEventListener('mousemove',e=>{if(dn){yaw-=(e.clientX-lx)*.006;lx=e.clientX}});
+ addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();ren.setSize(innerWidth,innerHeight)});
+ loop()}
+function refreshMarks(){if(!marks.length)return;marks.forEach((m,i)=>{const c=i<prog?0x2ecc71:i===prog?0xffd400:0x888888;m.a.material.color.setHex(c);m.ring.material.color.setHex(c);m.a.visible=i<=prog})}
+function tryTalk(i){if(i>prog)return toast('🔒 First talk to '+N[prog].name+' ('+N[prog].place+')');if(i<prog)return toast('✅ Already completed – nice work!');talk(i)}
+function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
+ if(!modal){if(keys.KeyQ)yaw+=2*dt;if(keys.KeyR)yaw-=2*dt;
+  let f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0),s=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
+  if(f||s){const dx=(-Math.sin(yaw)*f+Math.cos(yaw)*s),dz=(-Math.cos(yaw)*f-Math.sin(yaw)*s),l=Math.hypot(dx,dz),v=CONFIG.walkSpeed*dt;
+   const mv=(ax,az)=>{const nx=player.position.x+ax*v/l,nz=player.position.z+az*v/l;if(Math.abs(nx)>44||Math.abs(nz)>44)return;if(blocks.some(b=>Math.abs(nx-b.x)<b.w/2&&Math.abs(nz-b.z)<b.d/2))return;player.position.x=nx;player.position.z=nz};
+   mv(dx,0);mv(0,dz);player.rotation.y=Math.atan2(dx,dz);const sw=Math.sin(t*12)*.6;player.legL.rotation.x=sw;player.legR.rotation.x=-sw;player.armL.rotation.x=-sw;player.armR.rotation.x=sw}
+  else{player.legL.rotation.x=player.legR.rotation.x=player.armL.rotation.x=player.armR.rotation.x=0}}
+ near=-1;N.forEach((n,i)=>{if(Math.hypot(player.position.x-n.x,player.position.z-n.z)<4)near=i});
+ const p=$('prompt');if(near>=0&&!modal){p.style.display='block';p.textContent=near>prog?'🔒 Locked – meet '+N[prog].name+' first':near<prog?'✅ Completed':'Press E to talk to '+N[near].name}else p.style.display='none';
+ marks.forEach((m,i)=>{m.a.position.y=5.6+Math.sin(t*3+i)*.3;m.a.rotation.y=t*2});
+ cam.position.set(player.position.x+Math.sin(yaw)*10,7,player.position.z+Math.cos(yaw)*10);cam.lookAt(player.position.x,2,player.position.z);
+ ren.render(scene,cam)}
+</script></body></html>
