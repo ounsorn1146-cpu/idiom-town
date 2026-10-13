@@ -40,45 +40,61 @@ canvas{touch-action:none}#joy,#tb{display:none;-webkit-user-select:none;user-sel
 /* ============ TEACHER SETTINGS — edit freely ============ */
 const CONFIG={
  title:"🧱 Idiom Town", school:"M.6 English · Practice Step",
- subtitle:"Walk around town, talk to each person, choose the best expression, then write (or say!) your own reply. Finish all 6 to become a Town Leader.",
+ subtitle:"Walk around town, talk to each person, choose the best expression, then write (or say!) your own reply. Travel through 4 cities (A1 → B2+) to become a Town Leader.",
  teacherPin:"1234",            // PIN for Teacher panel (export / reset)
  pointsMCQ:[10,5,2],           // points for 1st / 2nd / 3rd+ attempt on multiple choice
  pointsWrite:20,               // points for an accepted writing task
  sheetUrl:"",                  // optional: Google Apps Script web-app URL to collect scores online
  skyColor:0x8fd3ff, walkSpeed:9,
  /* Each NPC: unlocks in order. need = regex list; min = how many must appear in the writing. */
+ cities:[
+ {name:"Little Brickton",level:"A1",blurb:"A friendly little village. Practise greetings and simple polite requests.",sky:0x8fd3ff,ground:"#3fae49",stud:"#4cc457",deco:"trees",skyH:[4,8],wall:["#e8b4b8","#f7dc6f","#aed6f1","#f5cba7"]},
+ {name:"Port Blockton",level:"A2",blurb:"A sunny harbour town. Practise invitations, favours and everyday small talk.",sky:0xffc98a,ground:"#e8d08a",stud:"#f4e2a8",deco:"palms",skyH:[5,9],wall:["#f8c471","#85c1e9","#f1948a","#82e0aa"]},
+ {name:"Studs City",level:"B1",blurb:"A busy modern city. Practise encouraging people and speaking in interviews.",sky:0xb7c9d9,ground:"#7d8a94",stud:"#8d9aa4",deco:"lamps",skyH:[14,30],wall:["#95a5a6","#7f8c8d","#a6acaf","#85929e"]},
+ {name:"Skyline Heights",level:"B2 / B2+",blurb:"A glittering night-time business district. Lead, persuade and speak with confidence.",sky:0x1b1f4b,ground:"#3a4155",stud:"#464e66",deco:"lamps",night:true,skyH:[26,52],wall:["#2c3e50","#34495e","#273746","#1b2631"]}
+ ],
  npcs:[
- {name:"Mia",role:"Café Barista",level:"A1",rank:"Newcomer",place:"Brick Café",color:0xd62828,x:-14,z:-8,
+ {name:"Mia",role:"Café Barista",level:"A1",rank:"Newcomer",place:"Brick Café",color:0xd62828,city:0,hair:0x2b1b12,skin:0xf1c27d,acc:'apron',x:-14,z:-8,bld:[-22,-14,9,8,5,0xe74c3c,0x992222],
   say:"Hi there! Welcome to Brick Café. What can I get for you today?",
   react:"Coming right up! Anything else? ☕",
   opts:[["Could I have a latte, please?",1,"Polite and natural for ordering."],["Give me coffee now.",0,"Too direct – sounds rude."],["I am wanting a latte.",0,"We don't use 'be wanting' – say 'I'd like…'."]],
   task:"Order a drink and a snack politely, then ask how much it is.",hint:"Could I have… / I'd like… / How much is that?",
   need:["could i|can i|i'd like|i would like","how much"],min:2,minWords:10},
- {name:"Tom",role:"New Neighbour",level:"A2",rank:"Resident",place:"Blue House",color:0x1d6fd6,x:14,z:-10,
+ {name:"Sam",role:"Bus Driver",level:"A1",rank:"Newcomer",place:"Bus Station",color:0x27ae60,city:0,hair:0x333333,skin:0xe0ac69,acc:'cap',x:14,z:-8,bld:[22,-14,9,8,5,0x2ecc71,0x1e8449],
+  say:"Good morning! Where are you going today?",react:"Okay! Please take a seat. 🚌",
+  opts:[["To the city centre, please.",1,"Short, clear and polite."],["I going city.",0,"Grammar: say 'I'm going to the city centre.'"],["Where you are?",0,"A different question, and the word order is wrong."]],
+  task:"Say good morning to Sam, tell him where you want to go, and say thank you.",hint:"Good morning! · I'd like to go to… · Thank you!",
+  need:["good morning|hello","to the|to my|to a","thank"],min:3,minWords:8},
+ {name:"Tom",role:"New Neighbour",level:"A2",rank:"Resident",place:"Blue House",color:0x1d6fd6,city:1,hair:0x6b3e1a,skin:0xc68642,acc:'',x:14,z:-10,bld:[22,-14,9,8,5,0x3498db,0x1b5e8c],
   say:"Oh hi! Sorry I'm ten minutes late – the bus was slow!",
   react:"Thanks! Come on in, I'll grab the boxes.",
   opts:[["It's okay, no worries!",1,"'No worries' = it's not a problem. Friendly and informal."],["You must be sorry.",0,"Unnatural and a bit unkind."],["I don't worry.",0,"Different meaning – it's about your feelings, not a response."]],
   task:"Tom is moving in. Welcome him, offer to help with a box, and tell him to make himself at home.",hint:"Make yourself at home · Can I give you a hand?",
   need:["make yourself at home","hand|help"],min:2,minWords:12},
- {name:"Priya",role:"Classmate",level:"B1",rank:"Neighbour",place:"Brick School",color:0x8e44ad,x:-14,z:16,
+ {name:"Jess",role:"Friend at the Sports Centre",level:"A2",rank:"Resident",place:"Sports Centre",color:0xe67e22,city:1,hair:0xc0392b,skin:0xffdbac,acc:'',x:-14,z:16,bld:[-22,20,10,8,6,0xe67e22,0xa04000],
+  say:"A few of us are going to the cinema tonight. Do you want to come?",react:"Awesome! It'll be fun. 🎬",
+  opts:[["Sounds great! What time shall we meet?",1,"Accepting and asking about plans. Natural and friendly."],["I am agree with you.",0,"We say 'I agree' – no 'am'."],["Yes, I go. Bye bye.",0,"Too abrupt, and the tense is off."]],
+  task:"Accept Jess's invitation, ask what time and where to meet, and suggest buying snacks.",hint:"Sounds great! · What time…? · How about some popcorn?",
+  need:["sounds (great|good)|i'd love to|that would be (great|nice)","what time|where","how about|shall we|let's"],min:3,minWords:14},
+ {name:"Priya",role:"Classmate",level:"B1",rank:"Neighbour",place:"Brick School",color:0x8e44ad,city:2,hair:0x111111,skin:0x8d5524,acc:'pack',x:-14,z:16,bld:[-22,20,10,8,6,0xf1c40f,0xb38f00],
   say:"I'm so nervous about the English exam tomorrow… I feel like I'll fail!",
   react:"Thanks, that really helps. I'll try!",
   opts:[["Hang in there! You'll do great.",1,"'Hang in there' = keep trying, don't give up. Supportive."],["That's a piece of cake for you. Who cares?",0,"Dismissive – she's nervous, not bored."],["Break a leg and don't talk to me.",0,"'Break a leg' is for performances, and the second part is rude."]],
   task:"Encourage Priya in 2–3 sentences. Use at least ONE idiom (e.g. hang in there / piece of cake / you've got this).",hint:"Hang in there · It'll be a piece of cake · You've got this",
   need:["hang in there","piece of cake","you've got this|you got this","keep your chin up|fingers crossed"],min:1,minWords:15},
- {name:"Mr. Lee",role:"Interviewer",level:"B1+",rank:"Professional",place:"Page & Co. Bookshop",color:0x2c3e50,x:14,z:16,
+ {name:"Mr. Lee",role:"Interviewer",level:"B1+",rank:"Professional",place:"Page & Co. Bookshop",color:0x2c3e50,city:2,hair:0x222222,skin:0xe0ac69,acc:'tie glasses',x:14,z:16,bld:[22,20,10,8,5,0x8d6e63,0x5d4037],
   say:"Thanks for coming. So, why should we hire you for this job?",
   react:"Great answer. I like your attitude!",
   opts:[["I'm a quick learner and I always go the extra mile.",1,"Professional idioms that show attitude."],["I need money, so hire me.",0,"Honest but unprofessional."],["Because it is easy as pie to me, bro.",0,"Too casual/slangy for an interview."]],
   task:"Answer 'Why should we hire you?' professionally in 3–4 sentences. Use at least TWO of: go the extra mile · hit the ground running · a quick learner · team player.",hint:"I'm ready to hit the ground running. / I'm a team player…",
   need:["go the extra mile","hit the ground running","quick learner","team player"],min:2,minWords:25},
- {name:"Dr. Chen",role:"Project Manager",level:"B2",rank:"Team Leader",place:"Chen Tech Office",color:0x16a085,x:-6,z:-27,
+ {name:"Dr. Chen",role:"Project Manager",level:"B2",rank:"Team Leader",place:"Chen Tech Office",color:0x16a085,city:3,hair:0x111111,skin:0xf1c27d,acc:'tie glasses',x:-6,z:-27,bld:[-6,-36,12,8,7,0x1abc9c,0x0e7a66],
   say:"The client rejected our prototype. We have to rethink everything. Ideas?",
   react:"Hmm, interesting. Let's do that!",
   opts:[["Let's go back to the drawing board and think outside the box.",1,"Start again with new, creative ideas."],["Let's beat around the bush for a while.",0,"'Beat around the bush' = avoid the main point."],["It's raining cats and dogs, so let's wait.",0,"Irrelevant – it describes heavy rain."]],
   task:"Pitch a plan to your team (4–5 sentences). Use at least TWO: back to the drawing board · think outside the box · on the same page · get the ball rolling.",hint:"We need to get the ball rolling. · Let's make sure we're all on the same page.",
   need:["drawing board","outside the box","same page","ball rolling"],min:2,minWords:35},
- {name:"Mayor Rivera",role:"Town Mayor",level:"B2+",rank:"Town Leader",place:"Brick City Hall",color:0xc0392b,x:8,z:29,
+ {name:"Mayor Rivera",role:"Town Mayor",level:"B2+",rank:"Town Leader",place:"Brick City Hall",color:0xc0392b,city:3,hair:0xaaaaaa,skin:0xc68642,acc:'sash',x:8,z:29,bld:[8,38,12,8,7,0xecf0f1,0xc0392b],
   say:"Our river park is closing for repairs. Residents are upset. As a young leader, what's your message?",
   react:"Exactly. That's the leadership we need.",
   opts:[["It's a blessing in disguise – we can build something even better.",1,"Something bad turns out to have a good side. Strong, diplomatic tone."],["Let's cut corners and finish it by Friday.",0,"'Cut corners' = do it badly to save time/money – a poor message."],["It's not my cup of tea, so I'll stay quiet.",0,"Misused: 'not my cup of tea' means 'not my preference'."]],
@@ -93,10 +109,11 @@ const DB={get:()=>JSON.parse(localStorage.getItem('idiomTownBoard')||'[]'),set:v
 function save(){if(!me)return;let b=DB.get().filter(r=>r.id!==me.id);b.push({id:me.id,name:me.name,cls:me.cls,score,stage:prog,rank:prog?N[prog-1].rank:'—',log,t:Date.now()});DB.set(b);
  if(CONFIG.sheetUrl)fetch(CONFIG.sheetUrl,{method:'POST',mode:'no-cors',body:JSON.stringify({name:me.name,cls:me.cls,score,stage:prog,log})}).catch(()=>{})}
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2800)}
-function hud(){$('hud').innerHTML=`<div>👤 ${me.name}</div><div>⭐ ${score}</div><div>🏅 ${prog?N[prog-1].rank:'Visitor'}</div><div>🎯 ${prog<N.length?'Find '+N[prog].name+' at '+N[prog].place+' ('+N[prog].level+')':'All done! 🎉'}</div>`}
+const cityNow=()=>CONFIG.cities[N[Math.min(prog,N.length-1)].city];
+function hud(){$('hud').innerHTML=`<div>👤 ${me.name}</div><div>⭐ ${score}</div><div>🌆 ${cityNow().name} · ${cityNow().level}</div><div>🏅 ${prog?N[prog-1].rank:'Visitor'}</div><div>🎯 ${prog<N.length?'Find '+N[prog].name+' at '+N[prog].place+' ('+N[prog].level+')':'All done! 🎉'}</div>`}
 function start(){const n=$('nm').value.trim(),c=$('cl').value.trim();if(!n)return alert('Please enter your name');
  me={id:(n+'|'+c).toLowerCase(),name:n,cls:c};const old=DB.get().find(r=>r.id===me.id);if(old){prog=old.stage;score=old.score;log=old.log||[]}
- $('reg').style.display='none';modal=false;ready=true;hud();refreshMarks();if(!window.sceneStarted){init();}}
+ $('reg').style.display='none';modal=false;ready=true;hud();refreshMarks();if(!window.sceneStarted){init();}cityIntro(N[Math.min(prog,N.length-1)].city);}
 function board(back){const b=DB.get().sort((a,b)=>b.score-a.score||a.t-b.t).slice(0,15);
  show(`<h2>🏆 Leaderboard</h2><table><tr><th>#</th><th>Name</th><th>Class</th><th>Rank</th><th>Score</th></tr>${b.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${esc(r.cls)}</td><td>${r.rank}</td><td><b>${r.score}</b></td></tr>`).join('')||'<tr><td colspan=5>No players yet</td></tr>'}</table><small>Saved on this computer/browser. Set CONFIG.sheetUrl to collect online.</small><br><button onclick="closeD()">Close</button>`)}
 function teacher(){if(prompt('Teacher PIN')!==CONFIG.teacherPin)return;
@@ -122,51 +139,72 @@ function submitW(){const n=N[cur],t=$('ta').value.trim(),w=t.split(/\s+/).filter
  score+=CONFIG.pointsWrite;log=log.filter(l=>l.npc!==n.name);log.push({npc:n.name,level:n.level,att:att+1,text:t});
  if(cur===prog)prog++;save();hud();refreshMarks();
  const fin=prog>=N.length;bub(player,t,'#d8f5d0',1);bub(npcMesh[cur],fin?'You spoke like a true leader! 👏':'That sounds natural! Thanks! 😊','#fff',-1);$('dlg').style.display='none';
- setTimeout(()=>show(`<h2>🎉 ${fin?'You did it!':'Great job!'}</h2><div class="bub">${n.name}: "${fin?'You spoke like a true leader!':'That sounds natural! Thanks!'}"</div><p>+${CONFIG.pointsWrite} points · New rank: <b>${n.rank}</b></p><p>Total score: <b>${score}</b></p>${fin?'<button onclick="board()">🏆 See leaderboard</button>':'<button onclick="closeD()">Continue exploring ➜</button>'}`),2800)}
+ setTimeout(()=>show(`<h2>🎉 ${fin?'You did it!':'Great job!'}</h2><div class="bub">${n.name}: "${fin?'You spoke like a true leader!':'That sounds natural! Thanks!'}"</div><p>+${CONFIG.pointsWrite} points · New rank: <b>${n.rank}</b></p><p>Total score: <b>${score}</b></p>${fin?'<button onclick="board()">🏆 See leaderboard</button>':(N[prog].city!==n.city?'<p>🏙️ <b>City complete!</b></p><button onclick="travel()">🚌 Travel to '+CONFIG.cities[N[prog].city].name+' ('+CONFIG.cities[N[prog].city].level+') ➜</button><button class="g" onclick="closeD()">Stay here</button>':'<button onclick="closeD()">Continue exploring ➜</button>')}`),2800)}
 /* ---- 3D ---- */
-let scene,cam,ren,player,keys={},yaw=0,marks=[],npcMesh=[],blocks=[],clock=new THREE.Clock(),near=-1,jx=0,jy=0,jid=null,cid=null,clx=0,cx0=0,cy0=0,conv=null,bl=[],lookV=new THREE.Vector3(),pb;
+let scene,cam,ren,player,keys={},yaw=0,marks=[],npcMesh=[],blocks=[],clock=new THREE.Clock(),near=-1,jx=0,jy=0,jid=null,cid=null,clx=0,cx0=0,cy0=0,conv=null,bl=[],lookV=new THREE.Vector3(),pb,curCity=0;
 const M=c=>new THREE.MeshLambertMaterial({color:c});
 function B(w,h,d,c,x,y,z,p){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c));m.position.set(x,y,z);m.castShadow=true;(p||scene).add(m);return m}
-function C(r,h,c,x,y,z,p){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,16),M(c));m.position.set(x,y,z);(p||scene).add(m);return m}
-function fig(col,hair,cape){const g=new THREE.Group();
- g.legL=B(.32,.55,.34,0x223355,-.19,.28,0,g);g.legR=B(.32,.55,.34,0x223355,.19,.28,0,g);
- B(.8,.7,.45,col,0,.9,0,g);g.armL=B(.2,.6,.24,col,-.52,.9,0,g);g.armR=B(.2,.6,.24,col,.52,.9,0,g);
- B(.22,.2,.22,0xffd400,-.52,.5,0,g);B(.22,.2,.22,0xffd400,.52,.5,0,g);
- C(.32,.36,0xffd400,0,1.42,0,g);C(.12,.1,0xffd400,0,1.65,0,g);
- B(.07,.07,.05,0,-.12,1.45,.31,g);B(.07,.07,.05,0,.12,1.45,.31,g);B(.2,.04,.05,0x552200,0,1.33,.31,g);
- C(.34,.16,hair,0,1.62,-.03,g);if(cape)B(.8,1,.05,cape,0,.95,-.28,g);
- g.scale.setScalar(1.5);return g}
+function S(r,c,x,y,z,p,sy){const m=new THREE.Mesh(new THREE.SphereGeometry(r,16,12),M(c));m.position.set(x,y,z);if(sy)m.scale.y=sy;m.castShadow=true;(p||scene).add(m);return m}
+function limb(g,r,h,c,x,y,z){const p=new THREE.Group();p.position.set(x,y,z);const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r*.9,h,12),M(c));m.position.y=-h/2;m.castShadow=true;p.add(m);g.add(p);return p}
+/* Chibi "town-folk" figure: round head, soft body, big smile */
+function fig(shirt,hair,skin,acc){acc=acc||'';const g=new THREE.Group();
+ g.legL=limb(g,.13,.6,0x34495e,-.2,.62,0);g.legR=limb(g,.13,.6,0x34495e,.2,.62,0);
+ S(.17,0x222222,0,-.58,.05,g.legL,.6);S(.17,0x222222,0,-.58,.05,g.legR,.6);
+ const t=new THREE.Mesh(new THREE.CylinderGeometry(.32,.42,.85,16),M(shirt));t.position.y=1.05;t.castShadow=true;g.add(t);
+ g.armL=limb(g,.1,.7,shirt,-.5,1.4,0);g.armR=limb(g,.1,.7,shirt,.5,1.4,0);S(.11,skin,0,-.72,0,g.armL);S(.11,skin,0,-.72,0,g.armR);
+ S(.5,skin,0,1.9,0,g);const h=new THREE.Mesh(new THREE.SphereGeometry(.54,16,12,0,Math.PI*2,0,Math.PI*.55),M(hair));h.position.set(0,1.95,-.04);g.add(h);
+ S(.065,0x111111,-.17,1.95,.44,g);S(.065,0x111111,.17,1.95,.44,g);S(.07,0xff9aa2,-.3,1.8,.38,g,.6);S(.07,0xff9aa2,.3,1.8,.38,g,.6);S(.045,0x7a2e2e,0,1.76,.48,g,.6);
+ if(acc.includes('cap')){const c=new THREE.Mesh(new THREE.CylinderGeometry(.5,.54,.2,16),M(0x1f3a5f));c.position.y=2.35;g.add(c);B(.5,.06,.4,0x1f3a5f,0,2.27,.5,g)}
+ if(acc.includes('glasses')){[-.17,.17].forEach(x=>{const r=new THREE.Mesh(new THREE.TorusGeometry(.1,.02,8,16),M(0x111111));r.position.set(x,1.96,.48);g.add(r)})}
+ if(acc.includes('apron'))B(.62,.7,.05,0xffffff,0,1.0,.4,g);
+ if(acc.includes('tie'))B(.1,.4,.05,0xc0392b,0,1.2,.43,g);
+ if(acc.includes('pack'))B(.55,.6,.25,0xf39c12,0,1.1,-.4,g);
+ if(acc.includes('sash')){const b=B(.12,.9,.05,0xf1c40f,0,1.1,.4,g);b.rotation.z=.6}
+ g.scale.setScalar(1.15);return g}
 function label(t,sub,col){const c=document.createElement('canvas');c.width=320;c.height=110;const x=c.getContext('2d');x.fillStyle='rgba(0,0,0,.7)';x.fillRect(0,0,320,110);x.fillStyle='#fff';x.font='bold 36px Arial';x.textAlign='center';x.fillText(t,160,45);x.fillStyle=col||'#ffd400';x.font='28px Arial';x.fillText(sub,160,88);
  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c)}));s.scale.set(4,1.4,1);return s}
 function house(x,z,w,d,h,col,roof,name){B(w,h,d,col,x,h/2,z);B(w+.6,.6,d+.6,roof,x,h+.3,z);
  for(let i=-1;i<=1;i+=2)for(let j=0;j<2;j++)B(1.3,1.3,.1,0x9fe0ff,x+i*w/4,2+j*2.2,z+(z<0?d/2:-d/2)+(z<0?.05:-.05));
  const s=label(name,'');s.position.set(x,h+2.2,z);scene.add(s);blocks.push({x,z,w:w+1.5,d:d+1.5})}
-function init(){window.sceneStarted=true;
- scene=new THREE.Scene();scene.background=new THREE.Color(CONFIG.skyColor);scene.fog=new THREE.Fog(CONFIG.skyColor,60,140);
- cam=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,300);cam.position.set(0,7,16);lookV.set(0,2,6);
- ren=new THREE.WebGLRenderer({antialias:true});ren.setSize(innerWidth,innerHeight);ren.shadowMap.enabled=true;document.body.prepend(ren.domElement);
- scene.add(new THREE.HemisphereLight(0xffffff,0x88aa66,.8));const sun=new THREE.DirectionalLight(0xffffff,.7);sun.position.set(30,50,20);sun.castShadow=true;sun.shadow.camera.left=sun.shadow.camera.bottom=-60;sun.shadow.camera.right=sun.shadow.camera.top=60;scene.add(sun);
- const tc=document.createElement('canvas');tc.width=tc.height=64;const x=tc.getContext('2d');x.fillStyle='#3fae49';x.fillRect(0,0,64,64);x.fillStyle='#4cc457';x.beginPath();x.arc(32,32,18,0,7);x.fill();
+function tower(x,z,w,h,wall,night){const c=document.createElement('canvas');c.width=c.height=64;const q=c.getContext('2d');q.fillStyle=wall;q.fillRect(0,0,64,64);
+ for(let i=0;i<4;i++)for(let j=0;j<4;j++){q.fillStyle=night?(Math.random()<.4?'#1a2038':'#ffe27a'):'#cfeeff';q.fillRect(6+i*15,6+j*15,9,9)}
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(Math.max(1,Math.round(w/5)),Math.max(1,Math.round(h/5)));
+ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,w),new THREE.MeshLambertMaterial({map:t}));m.position.set(x,h/2,z);scene.add(m)}
+function buildCity(ci){const C=CONFIG.cities[ci];curCity=ci;conv=null;yaw=0;
+ while(scene.children.length)scene.remove(scene.children[0]);
+ blocks=[];bl=[];marks=new Array(N.length).fill(null);npcMesh=new Array(N.length).fill(null);
+ scene.background=new THREE.Color(C.sky);scene.fog=new THREE.Fog(C.sky,70,170);
+ scene.add(new THREE.HemisphereLight(C.night?0x8899ff:0xffffff,C.night?0x222244:0x88aa66,C.night?.6:.85));
+ const sun=new THREE.DirectionalLight(C.night?0x9db4ff:0xffffff,C.night?.45:.7);sun.position.set(30,50,20);sun.castShadow=true;const sc=sun.shadow.camera;sc.left=sc.bottom=-60;sc.right=sc.top=60;scene.add(sun);
+ const tc=document.createElement('canvas');tc.width=tc.height=64;const x=tc.getContext('2d');x.fillStyle=C.ground;x.fillRect(0,0,64,64);x.fillStyle=C.stud;x.beginPath();x.arc(32,32,18,0,7);x.fill();
  const t=new THREE.CanvasTexture(tc);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(45,45);
  const g=new THREE.Mesh(new THREE.PlaneGeometry(180,180),new THREE.MeshLambertMaterial({map:t}));g.rotation.x=-Math.PI/2;g.receiveShadow=true;scene.add(g);
- const r1=new THREE.Mesh(new THREE.PlaneGeometry(100,6),M(0x555555));r1.rotation.x=-Math.PI/2;r1.position.set(0,.02,3);scene.add(r1);
- const r2=new THREE.Mesh(new THREE.PlaneGeometry(6,100),M(0x555555));r2.rotation.x=-Math.PI/2;r2.position.set(0,.03,0);scene.add(r2);
- house(-22,-14,9,8,5,0xe74c3c,0x992222,'Brick Café');house(22,-14,9,8,5,0x3498db,0x1b5e8c,'Blue House');
- house(-22,20,10,8,6,0xf1c40f,0xb38f00,'Brick School');house(22,20,10,8,5,0x8d6e63,0x5d4037,'Page & Co.');
- house(-6,-36,12,8,7,0x1abc9c,0x0e7a66,'Chen Tech');house(8,38,12,8,7,0xecf0f1,0xc0392b,'City Hall');
- for(let i=0;i<26;i++){const px=(Math.random()-.5)*88,pz=(Math.random()-.5)*88;if(Math.abs(px)<5||Math.abs(pz-3)<5||blocks.some(b=>Math.abs(px-b.x)<b.w&&Math.abs(pz-b.z)<b.d))continue;
-  B(.6,2,.6,0x6d4c41,px,1,pz);B(2.6,1,2.6,0x2e8b3d,px,2.5,pz);B(1.8,1,1.8,0x34a047,px,3.4,pz)}
- player=fig(0x2f6f9f,0x3a2a1a,0xd62828);player.position.set(0,0,6);scene.add(player);pb=new THREE.Mesh(new THREE.OctahedronGeometry(.28),new THREE.MeshBasicMaterial({color:0x44ff66}));pb.scale.y=1.6;pb.position.y=2.3;player.add(pb);
- N.forEach((n,i)=>{const f=fig(n.color,[0x222,0x6b3e1a,0xeeee99,0x111,0x884400,0x999999][i]);f.position.set(n.x,0,n.z);f.lookAt(0,0,3);scene.add(f);
-  const s=label(n.name,n.level+' · '+n.role);s.position.set(n.x,4.4,n.z);scene.add(s);f.lab=s;
-  const a=new THREE.Mesh(new THREE.ConeGeometry(.5,1,4),M(0xffd400));a.rotation.x=Math.PI;a.position.set(n.x,5.6,n.z);scene.add(a);
+ [[100,6,0,3,.02],[6,100,0,0,.03]].forEach(r=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(r[0],r[1]),M(C.night?0x2a2a33:0x555555));m.rotation.x=-Math.PI/2;m.position.set(r[2],r[4],r[3]);scene.add(m)});
+ if(C.deco==='palms'){const w=new THREE.Mesh(new THREE.PlaneGeometry(200,45),M(0x3aa7e0));w.rotation.x=-Math.PI/2;w.position.set(0,.04,-67);scene.add(w)}
+ N.forEach(n=>{if(n.city===ci){const b=n.bld;house(b[0],b[1],b[2],b[3],b[4],b[5],b[6],n.place)}});
+ for(let k=-5;k<=5;k++)[[k*10,-56],[k*10,56],[-56,k*10],[56,k*10]].forEach(p=>{if(C.deco==='palms'&&p[1]<-40)return;
+  tower(p[0]+(Math.random()-.5)*3,p[1]+(Math.random()-.5)*3,7+Math.random()*3,C.skyH[0]+Math.random()*(C.skyH[1]-C.skyH[0]),C.wall[Math.floor(Math.random()*C.wall.length)],C.night)});
+ for(let i=0;i<30;i++){const px=(Math.random()-.5)*88,pz=(Math.random()-.5)*88;if(Math.abs(px)<5||Math.abs(pz-3)<5||blocks.some(b=>Math.abs(px-b.x)<b.w&&Math.abs(pz-b.z)<b.d))continue;
+  if(C.deco==='trees'){B(.6,2,.6,0x6d4c41,px,1,pz);B(2.6,1,2.6,0x2e8b3d,px,2.5,pz);B(1.8,1,1.8,0x34a047,px,3.4,pz)}
+  else if(C.deco==='palms'){B(.4,3.6,.4,0x9c7a4a,px,1.8,pz);for(let a=0;a<5;a++){const l=B(2.2,.12,.5,0x2ecc71,px+Math.cos(a*1.26)*.9,3.7,pz+Math.sin(a*1.26)*.9);l.rotation.y=-a*1.26}}
+  else{B(.15,4,.15,0x333333,px,2,pz);S(.35,0xfff2b0,px,4.2,pz)}}
+ if(!player){player=fig(0x1abc9c,0x4a2f1b,0xf1c27d,'pack');pb=new THREE.Mesh(new THREE.OctahedronGeometry(.28),new THREE.MeshBasicMaterial({color:0x44ff66}));pb.scale.y=1.6;pb.position.y=3;player.add(pb)}
+ player.position.set(0,0,6);player.rotation.y=0;scene.add(player);pb.visible=true;
+ N.forEach((n,i)=>{if(n.city!==ci)return;const f=fig(n.color,n.hair,n.skin,n.acc);f.position.set(n.x,0,n.z);f.lookAt(0,0,3);scene.add(f);
+  const s=label(n.name,n.level+' · '+n.role);s.position.set(n.x,3.9,n.z);scene.add(s);f.lab=s;
+  const a=new THREE.Mesh(new THREE.ConeGeometry(.5,1,4),M(0xffd400));a.rotation.x=Math.PI;a.position.set(n.x,5.2,n.z);scene.add(a);
   const ring=new THREE.Mesh(new THREE.RingGeometry(1.8,2.2,32),new THREE.MeshBasicMaterial({color:0xffd400,side:2}));ring.rotation.x=-Math.PI/2;ring.position.set(n.x,.06,n.z);scene.add(ring);
-  marks.push({a,ring});npcMesh.push(f)});
- refreshMarks();
+  marks[i]={a,ring};npcMesh[i]=f});
+ refreshMarks()}
+function cityIntro(ci){const C=CONFIG.cities[ci];show(`<h2>🌆 Welcome to ${C.name}</h2><p><span class="lv">${C.level}</span> ${C.blurb}</p><p><b>Mission:</b> talk to ${N.filter(n=>n.city===ci).map(n=>n.name+' ('+n.role+')').join(' and ')}. Complete both to unlock the next city.</p><button onclick="closeD()">Let's go ➜</button>`)}
+function travel(){closeD();buildCity(N[prog].city);hud();cityIntro(N[prog].city)}
+function init(){window.sceneStarted=true;
+ scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,300);cam.position.set(0,7,16);lookV.set(0,2,6);
+ ren=new THREE.WebGLRenderer({antialias:true});ren.setSize(innerWidth,innerHeight);ren.shadowMap.enabled=true;document.body.prepend(ren.domElement);
+ buildCity(N[Math.min(prog,N.length-1)].city);
  addEventListener('keydown',e=>{keys[e.code]=1;if(!modal&&(e.code==='KeyE'||e.code==='Space')&&near>=0)tryTalk(near)});
  addEventListener('keyup',e=>keys[e.code]=0);
  let dn=0,lx=0;ren.domElement.onmousedown=e=>{dn=1;lx=e.clientX};addEventListener('mouseup',()=>dn=0);addEventListener('mousemove',e=>{if(dn){yaw-=(e.clientX-lx)*.006;lx=e.clientX}});
-
  const joy=$('joy'),kn=$('knob'),tb=$('tb');
  function jm(t){let dx=t.clientX-cx0,dy=t.clientY-cy0;const l=Math.hypot(dx,dy),m=50;if(l>m){dx*=m/l;dy*=m/l}kn.style.transform='translate('+dx+'px,'+dy+'px)';jx=Math.abs(dx)>10?dx/m:0;jy=Math.abs(dy)>10?dy/m:0}
  joy.addEventListener('touchstart',e=>{const t=e.changedTouches[0];jid=t.identifier;const r=joy.getBoundingClientRect();cx0=r.left+r.width/2;cy0=r.top+r.height/2;jm(t);e.preventDefault()},{passive:false});
@@ -189,11 +227,11 @@ function bub(who,txt,col,side){bl=bl.filter(x=>{if(x.who===who){scene.remove(x);
  const tx=W/2+side*90;x.beginPath();x.moveTo(tx-22,H-36);x.lineTo(tx+side*6,H-4);x.lineTo(tx+22,H-36);x.closePath();x.fill();x.stroke();x.fillRect(tx-19,H-39,38,7);
  x.fillStyle='#222';x.textAlign='center';ls.forEach((t,k)=>x.fillText(t,W/2,P+F+k*L-2));
  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false,transparent:true}));sp.center.set(.5,0);sp.scale.set(W/105,H/105,1);sp.renderOrder=10;sp.who=who;
- const o=-side*.8;sp.position.set(who.position.x+conv.dx*o,3.3,who.position.z+conv.dz*o);scene.add(sp);bl.push(sp)}
+ const o=-side*.8;sp.position.set(who.position.x+conv.dx*o,3.4,who.position.z+conv.dz*o);scene.add(sp);bl.push(sp)}
 function startConv(i){const n=N[i],f=npcMesh[i];let dx=n.x-player.position.x,dz=n.z-player.position.z;const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;
  player.position.x=n.x-dx*4.6;player.position.z=n.z-dz*4.6;player.rotation.y=Math.atan2(dx,dz);f.lookAt(player.position.x,0,player.position.z);
  f.lab.visible=false;pb.visible=false;conv={x:n.x,z:n.z,px:-dz,pz:dx,dx,dz};bub(f,n.say,'#fff',-1)}
-function refreshMarks(){if(!marks.length)return;marks.forEach((m,i)=>{const c=i<prog?0x2ecc71:i===prog?0xffd400:0x888888;m.a.material.color.setHex(c);m.ring.material.color.setHex(c);m.a.visible=i<=prog})}
+function refreshMarks(){marks.forEach((m,i)=>{if(!m)return;const c=i<prog?0x2ecc71:i===prog?0xffd400:0x888888;m.a.material.color.setHex(c);m.ring.material.color.setHex(c);m.a.visible=i<=prog})}
 function tryTalk(i){if(i>prog)return toast('🔒 First talk to '+N[prog].name+' ('+N[prog].place+')');if(i<prog)return toast('✅ Already completed – nice work!');talk(i)}
 function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
  if(!modal){if(keys.KeyQ)yaw+=2*dt;if(keys.KeyR)yaw-=2*dt;
@@ -202,10 +240,10 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
    const mv=(ax,az)=>{const nx=player.position.x+ax*v/l,nz=player.position.z+az*v/l;if(Math.abs(nx)>44||Math.abs(nz)>44)return;if(blocks.some(b=>Math.abs(nx-b.x)<b.w/2&&Math.abs(nz-b.z)<b.d/2))return;player.position.x=nx;player.position.z=nz};
    mv(dx,0);mv(0,dz);player.rotation.y=Math.atan2(dx,dz);const sw=Math.sin(t*12)*.6;player.legL.rotation.x=sw;player.legR.rotation.x=-sw;player.armL.rotation.x=-sw;player.armR.rotation.x=sw}
   else{player.legL.rotation.x=player.legR.rotation.x=player.armL.rotation.x=player.armR.rotation.x=0}}
- near=-1;N.forEach((n,i)=>{if(Math.hypot(player.position.x-n.x,player.position.z-n.z)<4)near=i});
+ near=-1;N.forEach((n,i)=>{if(n.city===curCity&&Math.hypot(player.position.x-n.x,player.position.z-n.z)<4)near=i});
  $('joy').style.visibility=$('tb').style.visibility=modal?'hidden':'visible';$('tb').style.opacity=near>=0?1:.4;const p=$('prompt');if(near>=0&&!modal){p.style.display='block';p.textContent=near>prog?'🔒 Locked – meet '+N[prog].name+' first':near<prog?'✅ Completed':(matchMedia('(pointer:coarse)').matches?'Tap 💬 TALK to speak to ':'Press E to talk to ')+N[near].name}else p.style.display='none';
- marks.forEach((m,i)=>{m.a.position.y=5.6+Math.sin(t*3+i)*.3;m.a.rotation.y=t*2});
- pb.rotation.y=t*2;pb.position.y=2.3+Math.sin(t*3)*.08;let tp,tl;if(conv){const mx=(player.position.x+conv.x)/2,mz=(player.position.z+conv.z)/2;tp=new THREE.Vector3(mx+conv.px*11,4.5,mz+conv.pz*11);tl=new THREE.Vector3(mx,2.8,mz)}else{tp=new THREE.Vector3(player.position.x+Math.sin(yaw)*10,7,player.position.z+Math.cos(yaw)*10);tl=new THREE.Vector3(player.position.x,2,player.position.z)}
+ marks.forEach((m,i)=>{if(!m)return;m.a.position.y=5.2+Math.sin(t*3+i)*.3;m.a.rotation.y=t*2});
+ pb.rotation.y=t*2;pb.position.y=3+Math.sin(t*3)*.08;let tp,tl;if(conv){const mx=(player.position.x+conv.x)/2,mz=(player.position.z+conv.z)/2;tp=new THREE.Vector3(mx+conv.px*11,4.5,mz+conv.pz*11);tl=new THREE.Vector3(mx,2.8,mz)}else{tp=new THREE.Vector3(player.position.x+Math.sin(yaw)*10,7,player.position.z+Math.cos(yaw)*10);tl=new THREE.Vector3(player.position.x,2,player.position.z)}
  const k=Math.min(1,dt*4);cam.position.lerp(tp,k);lookV.lerp(tl,k);cam.lookAt(lookV);
  ren.render(scene,cam)}
 </script></body></html>
