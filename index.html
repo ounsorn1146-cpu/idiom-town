@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>Idiom Town</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <style>
 *{box-sizing:border-box}body{margin:0;overflow:hidden;font-family:Segoe UI,Arial,sans-serif;background:#8fd3ff}
 .ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,20,40,.72);z-index:5}
@@ -19,9 +19,16 @@ button.g{background:#888;border-color:#555}button.o{background:#f77f00;border-co
 table{width:100%;border-collapse:collapse}td,th{padding:5px;border-bottom:1px solid #ddd;text-align:left}small{color:#555}
 #help{position:fixed;bottom:6px;right:8px;color:#fff;font-size:12px;z-index:2;text-shadow:0 1px 2px #000}
 #dlg.dock{background:transparent;align-items:flex-end;pointer-events:none}#dlg.dock .card{pointer-events:auto;margin-bottom:10px;border-radius:26px;border-width:4px;max-width:760px;max-height:44vh}.opt{border-radius:22px!important}
+canvas{touch-action:none}#joy,#tb{display:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+@media (pointer:coarse){#joy,#tb{display:block}#help{display:none}}
+#joy{position:fixed;left:max(22px,env(safe-area-inset-left));bottom:30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.25);border:3px solid rgba(255,255,255,.75);z-index:3;touch-action:none}
+#knob{position:absolute;left:37px;top:37px;width:50px;height:50px;border-radius:50%;background:rgba(255,212,0,.92);border:3px solid #c9a600}
+#tb{position:fixed;right:max(22px,env(safe-area-inset-right));bottom:42px;width:88px;height:88px;border-radius:50%;background:#ffd400;color:#222;border:4px solid #c9a600;font-weight:800;font-size:17px;z-index:3;touch-action:none;margin:0;padding:0}
+@media(max-width:760px){.card{padding:14px}#hud div{font-size:12px;padding:4px 8px}button{font-size:15px;padding:8px 12px}.bub{font-size:15px}}
 </style></head><body>
 <div id="hud"></div><div id="prompt"></div><div id="toast"></div>
 <div id="help">WASD / Arrows = walk · Q / R or drag mouse = turn camera · E / Space = talk</div>
+<div id="joy"><div id="knob"></div></div><button id="tb">💬 TALK</button>
 <div class="ov" id="reg"><div class="card">
 <h1 id="ttl"></h1><p id="sub"></p>
 <input id="nm" placeholder="Full name"><input id="cl" placeholder="Class / No. (e.g. M.6/2 No.14)">
@@ -117,7 +124,7 @@ function submitW(){const n=N[cur],t=$('ta').value.trim(),w=t.split(/\s+/).filter
  const fin=prog>=N.length;bub(player,t,'#d8f5d0',1);bub(npcMesh[cur],fin?'You spoke like a true leader! 👏':'That sounds natural! Thanks! 😊','#fff',-1);$('dlg').style.display='none';
  setTimeout(()=>show(`<h2>🎉 ${fin?'You did it!':'Great job!'}</h2><div class="bub">${n.name}: "${fin?'You spoke like a true leader!':'That sounds natural! Thanks!'}"</div><p>+${CONFIG.pointsWrite} points · New rank: <b>${n.rank}</b></p><p>Total score: <b>${score}</b></p>${fin?'<button onclick="board()">🏆 See leaderboard</button>':'<button onclick="closeD()">Continue exploring ➜</button>'}`),2800)}
 /* ---- 3D ---- */
-let scene,cam,ren,player,keys={},yaw=0,marks=[],npcMesh=[],blocks=[],clock=new THREE.Clock(),near=-1,conv=null,bl=[],lookV=new THREE.Vector3(),pb;
+let scene,cam,ren,player,keys={},yaw=0,marks=[],npcMesh=[],blocks=[],clock=new THREE.Clock(),near=-1,jx=0,jy=0,jid=null,cid=null,clx=0,cx0=0,cy0=0,conv=null,bl=[],lookV=new THREE.Vector3(),pb;
 const M=c=>new THREE.MeshLambertMaterial({color:c});
 function B(w,h,d,c,x,y,z,p){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c));m.position.set(x,y,z);m.castShadow=true;(p||scene).add(m);return m}
 function C(r,h,c,x,y,z,p){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,16),M(c));m.position.set(x,y,z);(p||scene).add(m);return m}
@@ -159,6 +166,17 @@ function init(){window.sceneStarted=true;
  addEventListener('keydown',e=>{keys[e.code]=1;if(!modal&&(e.code==='KeyE'||e.code==='Space')&&near>=0)tryTalk(near)});
  addEventListener('keyup',e=>keys[e.code]=0);
  let dn=0,lx=0;ren.domElement.onmousedown=e=>{dn=1;lx=e.clientX};addEventListener('mouseup',()=>dn=0);addEventListener('mousemove',e=>{if(dn){yaw-=(e.clientX-lx)*.006;lx=e.clientX}});
+
+ const joy=$('joy'),kn=$('knob'),tb=$('tb');
+ function jm(t){let dx=t.clientX-cx0,dy=t.clientY-cy0;const l=Math.hypot(dx,dy),m=50;if(l>m){dx*=m/l;dy*=m/l}kn.style.transform='translate('+dx+'px,'+dy+'px)';jx=Math.abs(dx)>10?dx/m:0;jy=Math.abs(dy)>10?dy/m:0}
+ joy.addEventListener('touchstart',e=>{const t=e.changedTouches[0];jid=t.identifier;const r=joy.getBoundingClientRect();cx0=r.left+r.width/2;cy0=r.top+r.height/2;jm(t);e.preventDefault()},{passive:false});
+ ren.domElement.addEventListener('touchstart',e=>{const t=e.changedTouches[0];cid=t.identifier;clx=t.clientX},{passive:true});
+ addEventListener('touchmove',e=>{for(const t of e.changedTouches){if(t.identifier===jid){jm(t);e.preventDefault()}else if(t.identifier===cid){yaw-=(t.clientX-clx)*.008;clx=t.clientX}}},{passive:false});
+ const te=e=>{for(const t of e.changedTouches){if(t.identifier===jid){jid=null;jx=jy=0;kn.style.transform=''}if(t.identifier===cid)cid=null}};
+ addEventListener('touchend',te);addEventListener('touchcancel',te);
+ tb.addEventListener('touchstart',e=>{e.preventDefault();if(!modal&&near>=0)tryTalk(near)},{passive:false});
+ tb.addEventListener('click',()=>{if(!modal&&near>=0)tryTalk(near)});
+ addEventListener('contextmenu',e=>e.preventDefault());
  addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();ren.setSize(innerWidth,innerHeight)});
  loop()}
 function clearB(){bl.forEach(x=>scene.remove(x));bl=[]}
@@ -179,13 +197,13 @@ function refreshMarks(){if(!marks.length)return;marks.forEach((m,i)=>{const c=i<
 function tryTalk(i){if(i>prog)return toast('🔒 First talk to '+N[prog].name+' ('+N[prog].place+')');if(i<prog)return toast('✅ Already completed – nice work!');talk(i)}
 function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
  if(!modal){if(keys.KeyQ)yaw+=2*dt;if(keys.KeyR)yaw-=2*dt;
-  let f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0),s=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
+  let f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)-jy,s=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0)+jx;
   if(f||s){const dx=(-Math.sin(yaw)*f+Math.cos(yaw)*s),dz=(-Math.cos(yaw)*f-Math.sin(yaw)*s),l=Math.hypot(dx,dz),v=CONFIG.walkSpeed*dt;
    const mv=(ax,az)=>{const nx=player.position.x+ax*v/l,nz=player.position.z+az*v/l;if(Math.abs(nx)>44||Math.abs(nz)>44)return;if(blocks.some(b=>Math.abs(nx-b.x)<b.w/2&&Math.abs(nz-b.z)<b.d/2))return;player.position.x=nx;player.position.z=nz};
    mv(dx,0);mv(0,dz);player.rotation.y=Math.atan2(dx,dz);const sw=Math.sin(t*12)*.6;player.legL.rotation.x=sw;player.legR.rotation.x=-sw;player.armL.rotation.x=-sw;player.armR.rotation.x=sw}
   else{player.legL.rotation.x=player.legR.rotation.x=player.armL.rotation.x=player.armR.rotation.x=0}}
  near=-1;N.forEach((n,i)=>{if(Math.hypot(player.position.x-n.x,player.position.z-n.z)<4)near=i});
- const p=$('prompt');if(near>=0&&!modal){p.style.display='block';p.textContent=near>prog?'🔒 Locked – meet '+N[prog].name+' first':near<prog?'✅ Completed':'Press E to talk to '+N[near].name}else p.style.display='none';
+ $('joy').style.visibility=$('tb').style.visibility=modal?'hidden':'visible';$('tb').style.opacity=near>=0?1:.4;const p=$('prompt');if(near>=0&&!modal){p.style.display='block';p.textContent=near>prog?'🔒 Locked – meet '+N[prog].name+' first':near<prog?'✅ Completed':(matchMedia('(pointer:coarse)').matches?'Tap 💬 TALK to speak to ':'Press E to talk to ')+N[near].name}else p.style.display='none';
  marks.forEach((m,i)=>{m.a.position.y=5.6+Math.sin(t*3+i)*.3;m.a.rotation.y=t*2});
  pb.rotation.y=t*2;pb.position.y=2.3+Math.sin(t*3)*.08;let tp,tl;if(conv){const mx=(player.position.x+conv.x)/2,mz=(player.position.z+conv.z)/2;tp=new THREE.Vector3(mx+conv.px*11,4.5,mz+conv.pz*11);tl=new THREE.Vector3(mx,2.8,mz)}else{tp=new THREE.Vector3(player.position.x+Math.sin(yaw)*10,7,player.position.z+Math.cos(yaw)*10);tl=new THREE.Vector3(player.position.x,2,player.position.z)}
  const k=Math.min(1,dt*4);cam.position.lerp(tp,k);lookV.lerp(tl,k);cam.lookAt(lookV);
